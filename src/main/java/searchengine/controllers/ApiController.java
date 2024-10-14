@@ -12,6 +12,8 @@ import searchengine.dto.statistics.StatisticsResponse;
 import searchengine.services.IndexingService;
 import searchengine.services.StatisticsService;
 
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 @RestController
@@ -20,6 +22,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 public class ApiController {
     private final StatisticsService statisticsService;
     private final IndexingService indexingService;
+    private final ExecutorService executor = Executors.newSingleThreadExecutor();
     private final AtomicBoolean indexingEnabled = new AtomicBoolean(false);
 
 
@@ -31,10 +34,12 @@ public class ApiController {
     @GetMapping("/startIndexing")
     public ResponseEntity startIndexing() {
         if (indexingEnabled.get()) {
-            return ResponseEntity.status(HttpStatus.CONFLICT).body(new ErrorResponse("Indexing is already running"));
+            return ResponseEntity.status(HttpStatus.CONFLICT).body(new ErrorResponse("Индексация уже запущена!"));
         }else {
-            indexingEnabled.set(true);
-            indexingService.startIndexing(indexingEnabled);
+            executor.submit(()->{
+                indexingEnabled.set(true);
+                indexingService.startIndexing(indexingEnabled);
+            });
             return ResponseEntity.status(HttpStatus.OK).body(new OkResponse());
         }
     }
@@ -42,7 +47,7 @@ public class ApiController {
     @GetMapping("/stopIndexing")
     public ResponseEntity stopIndexing() {
         if (!indexingEnabled.get()) {
-            return ResponseEntity.status(HttpStatus.CONFLICT).body(new ErrorResponse("Indexing is already running"));
+            return ResponseEntity.status(HttpStatus.CONFLICT).body(new ErrorResponse("Индексация не запущена"));
         }else {
             indexingEnabled.set(false);
             return ResponseEntity.status(HttpStatus.OK).body(new OkResponse());

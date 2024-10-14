@@ -3,15 +3,20 @@ package searchengine.services;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import searchengine.config.Connection;
 import searchengine.config.Site;
 import searchengine.config.SitesList;
+import searchengine.model.PageModel;
 import searchengine.model.SiteModel;
 import searchengine.model.StatusIndexing;
 import searchengine.repositories.PageRepository;
 import searchengine.repositories.SiteRepository;
+import searchengine.tools.PageIndexer;
 
-import java.io.IOException;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -23,6 +28,8 @@ public class IndexingServiceImpl implements IndexingService {
     private final PageRepository pageRepository;
     private final SiteRepository siteRepository;
     private final SitesList sitesForIndexing;
+    private final List<SiteModel> listAllSitesFromDB;
+    private final Connection connection;
 
     private volatile AtomicBoolean indexingEnabled;
 
@@ -34,15 +41,16 @@ public class IndexingServiceImpl implements IndexingService {
             deleteSitesAndPagesFromDB();
             addSiteToDB();
             indexingAllSites();
-        } catch (IOException | InterruptedException e) {
-            throw new RuntimeException(e);
+        } catch (RuntimeException | InterruptedException ex) {
+            indexingEnabled.set(false);
+            log.error("Error: " + ex.getMessage());
         }
     }
 
     public void deleteSitesAndPagesFromDB() {
         siteRepository.deleteAll();
         pageRepository.deleteAll();
-        log.info("Database is cleared!");
+        log.info("База данных очищена!");
     }
 
     public void addSiteToDB() {
@@ -53,13 +61,54 @@ public class IndexingServiceImpl implements IndexingService {
             newSite.setStatus(StatusIndexing.INDEXING);
             newSite.setStatusTime(LocalDateTime.now());
             siteRepository.save(newSite);
-            log.info("A site has been added to the database - {}", site.getUrl());
+            log.info("В базе данных создан сайт - {}", site.getUrl());
         }
     }
 
-    public void indexingAllSites() throws InterruptedException, IOException {
-        log.info("Site indexing has been started");
-        new ForkJoinPool().invoke(new PageParsingServiceImpl(pageRepository, siteRepository));
-        log.info("Site indexing has been finished");
+    public void indexingAllSites() throws InterruptedException {
+        while (indexingEnabled.get()) {
+            listAllSitesFromDB.addAll(siteRepository.findAll());
+            List<Thread> indexingThreadList = new ArrayList<>();
+            for (SiteModel indexingSite : listAllSitesFromDB) {
+                Runnable indexSite = () -> {
+                    try {
+                        while (indexingEnabled.get()) {
+                            log.info("Запущена индексация сайта " + indexingSite.getName());
+                            new ForkJoinPool().invoke(new PageIndexer(siteRepository, pageRepository, indexingSite, connection, indexingEnabled));
+                        }
+
+                    } catch (SecurityException ex) {
+                        SiteModel siteModel = siteRepository.findById(indexingSite.getId()).orElseThrow();
+                        siteModel.setStatus(StatusIndexing.FAILED);
+                        siteModel.setLastError(ex.getMessage());
+                        siteRepository.save(siteModel);
+                    }
+                    if (!indexingEnabled.get()) {
+                        log.warn("Индексация сайта " + indexingSite.getUrl() + " остановлена пользователем!");
+                        SiteModel siteModel = siteRepository.findById(indexingSite.getId()).orElseThrow();
+                        siteModel.setStatus(StatusIndexing.FAILED);
+                        siteModel.setLastError("Индексация сайта остановлена пользователем!");
+                        siteRepository.save(siteModel);
+                    } else {
+                        log.info("Завершена индексация сайта " + indexingSite.getName());
+                        SiteModel siteModel = siteRepository.findById(indexingSite.getId()).orElseThrow();
+                        siteModel.setStatus(StatusIndexing.INDEXED);
+                        siteModel.setStatusTime(LocalDateTime.now());
+                        siteRepository.save(siteModel);
+                    }
+
+                };
+                Thread thread = new Thread(indexSite);
+                indexingThreadList.add(thread);
+                thread.start();
+
+            }
+            for (Thread thread : indexingThreadList) {
+                thread.join();
+            }
+            indexingEnabled.set(false);
+            log.info("Индексация сайтов завершена!");
+        }
     }
 }
+
