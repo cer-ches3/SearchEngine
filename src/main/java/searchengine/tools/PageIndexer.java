@@ -1,11 +1,9 @@
 package searchengine.tools;
 
 import lombok.Data;
-import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.jsoup.Jsoup;
-import org.jsoup.UnsupportedMimeTypeException;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
@@ -19,8 +17,6 @@ import java.io.IOException;
 import java.util.concurrent.ConcurrentSkipListSet;
 import java.util.concurrent.RecursiveAction;
 import java.util.concurrent.atomic.AtomicBoolean;
-
-import static java.lang.Thread.sleep;
 
 @Slf4j
 @RequiredArgsConstructor
@@ -82,23 +78,23 @@ public class PageIndexer extends RecursiveAction {
         String message = ex.toString();
         int errorCode;
         if (message.contains("UnsupportedMimeTypeException")) {
-            errorCode = 415;    // Ссылка на pdf, jpg, png документы
+            errorCode = 415;    // пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅ pdf, jpg, png пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
         } else if (message.contains("Status=401")) {
-            errorCode = 401;    // На несуществующий домен
+            errorCode = 401;    // пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ
         } else if (message.contains("UnknownHostException")) {
             errorCode = 401;
         } else if (message.contains("Status=403")) {
-            errorCode = 403;    // Нет доступа, 403 Forbidden
+            errorCode = 403;    // пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ, 403 Forbidden
         } else if (message.contains("Status=404")) {
-            errorCode = 404;    // // Ссылка на pdf-документ, несущ. страница, проигрыватель
+            errorCode = 404;    // // пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅ pdf-пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ, пїЅпїЅпїЅпїЅпїЅ. пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ, пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
         } else if (message.contains("Status=500")) {
-            errorCode = 401;    // Страница авторизации
+            errorCode = 401;    // пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
         } else if (message.contains("ConnectException: Connection refused")) {
-            errorCode = 500;    // ERR_CONNECTION_REFUSED, не удаётся открыть страницу
+            errorCode = 500;    // ERR_CONNECTION_REFUSED, пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
         } else if (message.contains("SSLHandshakeException")) {
             errorCode = 525;
         } else if (message.contains("Status=503")) {
-            errorCode = 503; // Сервер временно не имеет возможности обрабатывать запросы по техническим причинам (обслуживание, перегрузка и прочее).
+            errorCode = 503; // пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ (пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ, пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅ пїЅпїЅпїЅпїЅпїЅпїЅ).
         } else {
             errorCode = -1;
         }
