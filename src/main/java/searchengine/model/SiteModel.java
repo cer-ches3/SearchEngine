@@ -12,7 +12,7 @@ import java.util.List;
 public class SiteModel {
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
-    @Column(name = "id")
+    @Column(name = "id", nullable = false)
     private Integer id;
 
     @Enumerated(EnumType.STRING)
@@ -34,4 +34,8 @@ public class SiteModel {
     @OneToMany(cascade = CascadeType.ALL)
     @JoinColumn(name = "site_id")
     private List<PageModel> pages;
+
+    @OneToMany(cascade = CascadeType.ALL)
+    @JoinColumn(name = "site_id")
+    private List<LemmaModel> lemmas;
 }
