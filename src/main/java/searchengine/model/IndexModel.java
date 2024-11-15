@@ -1,6 +1,5 @@
 package searchengine.model;
 
-import com.sun.istack.NotNull;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -16,23 +15,26 @@ import javax.persistence.*;
 @Getter
 public class IndexModel {
     @Id
-    @GeneratedValue(strategy = GenerationType.AUTO)
-    private Integer id;
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "id" , nullable = false)
+    private int id;
 
     @Column(name = "page_id", nullable = false)
-    private Integer pageId;
+    private int pageId;
 
     @Column(name = "lemma_id", nullable = false)
-    private Integer lemmaId;
+    private int lemmaId;
 
     @Column(name = "lemma_rank", nullable = false)
-    private Float lemmaRank;
+    private int lemmaCount;
 
-    @ManyToOne(cascade = CascadeType.ALL)
+    @ManyToOne(cascade = CascadeType.REMOVE)
+    @OnDelete(action = OnDeleteAction.CASCADE)
     @JoinColumn(name = "page_id", insertable = false, updatable = false, nullable = false)
     private PageModel pageModel;
 
-    @ManyToOne(cascade = CascadeType.ALL)
+    @ManyToOne
+    @OnDelete(action = OnDeleteAction.CASCADE)
     @JoinColumn(name = "lemma_id", insertable = false, updatable = false, nullable = false)
     private LemmaModel lemmaModel;
 }

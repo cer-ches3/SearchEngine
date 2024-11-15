@@ -12,6 +12,7 @@ import searchengine.dto.statistics.StatisticsResponse;
 import searchengine.services.IndexingService;
 import searchengine.services.StatisticsService;
 
+import java.net.MalformedURLException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -27,7 +28,7 @@ public class ApiController {
 
 
     @GetMapping("/statistics")
-    public ResponseEntity<StatisticsResponse> statistics() {
+    public ResponseEntity<StatisticsResponse> statistics() throws MalformedURLException {
         return ResponseEntity.ok(statisticsService.getStatistics());
     }
 

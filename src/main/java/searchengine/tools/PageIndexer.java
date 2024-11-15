@@ -14,6 +14,7 @@ import searchengine.repositories.PageRepository;
 import searchengine.repositories.SiteRepository;
 
 import java.io.IOException;
+import java.time.LocalDateTime;
 import java.util.concurrent.ConcurrentSkipListSet;
 import java.util.concurrent.RecursiveAction;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -50,6 +51,12 @@ public class PageIndexer extends RecursiveAction {
                 errorIdentifier(ex, indexingPage);
                 pageRepository.save(indexingPage);
             }
+            if (!indexingEnable.get()) {
+                return;
+            }
+            SiteModel siteModel = siteRepository.findById(indexingSite.getId()).orElseThrow();
+            siteModel.setStatusTime(LocalDateTime.now());
+            siteRepository.save(siteModel);
         }
 
     }
@@ -77,24 +84,18 @@ public class PageIndexer extends RecursiveAction {
     void errorIdentifier(Exception ex, PageModel indexingPage) {
         String message = ex.toString();
         int errorCode;
-        if (message.contains("UnsupportedMimeTypeException")) {
-            errorCode = 415;    // ������ �� pdf, jpg, png ���������
-        } else if (message.contains("Status=401")) {
-            errorCode = 401;    // �� �������������� �����
-        } else if (message.contains("UnknownHostException")) {
-            errorCode = 401;
+        if (message.contains("Status=401") || message.contains("UnknownHostException")) {
+            errorCode = 401;    // Не авторизован || Не существующий домен
         } else if (message.contains("Status=403")) {
-            errorCode = 403;    // ��� �������, 403 Forbidden
+            errorCode = 403;    // Нет доступа, 403 Forbidden
         } else if (message.contains("Status=404")) {
-            errorCode = 404;    // // ������ �� pdf-��������, �����. ��������, �������������
-        } else if (message.contains("Status=500")) {
-            errorCode = 401;    // �������� �����������
-        } else if (message.contains("ConnectException: Connection refused")) {
-            errorCode = 500;    // ERR_CONNECTION_REFUSED, �� ������ ������� ��������
-        } else if (message.contains("SSLHandshakeException")) {
-            errorCode = 525;
+            errorCode = 404;    // // Ссылка на не существующую страницу
+        } else if (message.contains("UnsupportedMimeTypeException")) {
+            errorCode = 415;    // Неподдерживаемый тип данных. Ссылка на документ, pdf, jpg, png
+        } else if (message.contains("Status=500") || message.contains("ConnectException: Connection refused")) {
+            errorCode = 500;    // Внутренняя ошибка сервера || ERR_CONNECTION_REFUSED, не удаётся открыть страницу
         } else if (message.contains("Status=503")) {
-            errorCode = 503; // ������ �������� �� ����� ����������� ������������ ������� �� ����������� �������� (������������, ���������� � ������).
+            errorCode = 503;    // Cервис недоступен
         } else {
             errorCode = -1;
         }

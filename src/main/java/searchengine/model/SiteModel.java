@@ -1,6 +1,8 @@
 package searchengine.model;
 
-import lombok.Data;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 import javax.persistence.*;
 import java.time.LocalDateTime;
@@ -8,12 +10,14 @@ import java.util.List;
 
 @Entity
 @Table(name = "site")
-@Data
+@NoArgsConstructor
+@Getter
+@Setter
 public class SiteModel {
     @Id
-    @GeneratedValue(strategy = GenerationType.AUTO)
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id", nullable = false)
-    private Integer id;
+    private int id;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "status", nullable = false)
@@ -31,11 +35,7 @@ public class SiteModel {
     @Column(name = "name", columnDefinition = "VARCHAR(255)", nullable = false)
     private String name;
 
-    @OneToMany(cascade = CascadeType.ALL)
+    @OneToMany(orphanRemoval = true)
     @JoinColumn(name = "site_id")
     private List<PageModel> pages;
-
-    @OneToMany(cascade = CascadeType.ALL)
-    @JoinColumn(name = "site_id")
-    private List<LemmaModel> lemmas;
 }

@@ -11,17 +11,13 @@ spring:
       hibernate:
         dialect: org.hibernate.dialect.MySQL8Dialect
     hibernate:
-      ddl-auto: update
+      ddl-auto: create
     show-sql: true
 
 indexing-settings:
   sites:
-    - url: https://lenta.ru
-      name: Лента.ру
-    - url: https://playback.ru
-      name: PlayBack.Ru
-    - url: https://skillbox.ru
-      name: Skillbox
+    - url: https://volochek.life/
+      name: volochek.life
 
 connection-settings:
   userAgent: Mozilla/5.0 (Linux; Android 6.0; Nexus 5 Build/MRA58N) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0
