@@ -6,6 +6,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import searchengine.config.SitesList;
 import searchengine.dto.responses.ErrorResponse;
 import searchengine.dto.responses.OkResponse;
 import searchengine.dto.statistics.StatisticsResponse;
@@ -25,6 +26,7 @@ public class ApiController {
     private final IndexingService indexingService;
     private final ExecutorService executor = Executors.newSingleThreadExecutor();
     private final AtomicBoolean indexingEnabled = new AtomicBoolean(false);
+    private final SitesList sitesList;
 
 
     @GetMapping("/statistics")

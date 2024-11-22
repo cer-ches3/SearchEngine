@@ -1,4 +1,4 @@
-package searchengine.services;
+package searchengine.services.Impl;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -8,8 +8,11 @@ import searchengine.config.Site;
 import searchengine.config.SitesList;
 import searchengine.model.SiteModel;
 import searchengine.model.StatusIndexing;
+import searchengine.repositories.LemmaRepository;
 import searchengine.repositories.PageRepository;
 import searchengine.repositories.SiteRepository;
+import searchengine.services.IndexingService;
+import searchengine.services.PageIndexerService;
 import searchengine.tools.PageIndexer;
 
 import java.time.LocalDateTime;
@@ -25,13 +28,13 @@ import java.util.concurrent.atomic.AtomicBoolean;
 public class IndexingServiceImpl implements IndexingService {
     private final PageRepository pageRepository;
     private final SiteRepository siteRepository;
+    private final LemmaRepository lemmaRepository;
     private final SitesList sitesForIndexing;
     private final List<SiteModel> listAllSitesFromDB;
     private final Connection connection;
+    private final PageIndexerService pageIndexerService;
 
     private volatile AtomicBoolean indexingEnabled;
-    private ForkJoinPool forkJoinPool;
-
 
     @Override
     public void startIndexing(AtomicBoolean indexingEnabled) {
@@ -56,7 +59,7 @@ public class IndexingServiceImpl implements IndexingService {
         for (Site site : sitesForIndexing.getSites()) {
             SiteModel newSite = new SiteModel();
             newSite.setName(site.getName());
-            newSite.setUrl(site.getUrl());
+            newSite.setUrl(String.valueOf(site.getUrl()));
             newSite.setStatus(StatusIndexing.INDEXING);
             newSite.setStatusTime(LocalDateTime.now());
             siteRepository.save(newSite);
@@ -65,13 +68,13 @@ public class IndexingServiceImpl implements IndexingService {
     }
 
     public void indexingAllSites() throws InterruptedException {
+        long startTime = System.currentTimeMillis();
         listAllSitesFromDB.addAll(siteRepository.findAll());
         List<Thread> indexingThreadList = new ArrayList<>();
         for (SiteModel indexingSite : listAllSitesFromDB) {
             Runnable indexSite = () -> {
                 log.info("Запущена индексация сайта " + indexingSite.getName());
-                forkJoinPool = new ForkJoinPool();
-                forkJoinPool.invoke(new PageIndexer(siteRepository, pageRepository, indexingSite, connection, indexingEnabled));
+                new ForkJoinPool().invoke(new PageIndexer(siteRepository, pageRepository,lemmaRepository, indexingSite, connection, indexingEnabled, pageIndexerService));
 
                 if (!indexingEnabled.get()) {
                     log.warn("Индексация сайта " + indexingSite.getUrl() + " остановлена пользователем!");
@@ -96,7 +99,7 @@ public class IndexingServiceImpl implements IndexingService {
             thread.join();
         }
         indexingEnabled.set(false);
-        log.info("Индексация сайтов завершена!");
+        log.info("Индексация сайтов завершена!\n Время индексации: " + (System.currentTimeMillis() - startTime));
     }
 }
 

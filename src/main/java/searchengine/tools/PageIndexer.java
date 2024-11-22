@@ -10,8 +10,10 @@ import org.jsoup.select.Elements;
 import searchengine.config.Connection;
 import searchengine.model.PageModel;
 import searchengine.model.SiteModel;
+import searchengine.repositories.LemmaRepository;
 import searchengine.repositories.PageRepository;
 import searchengine.repositories.SiteRepository;
+import searchengine.services.PageIndexerService;
 
 import java.io.IOException;
 import java.time.LocalDateTime;
@@ -25,9 +27,11 @@ import java.util.concurrent.atomic.AtomicBoolean;
 public class PageIndexer extends RecursiveAction {
     private final SiteRepository siteRepository;
     private final PageRepository pageRepository;
+    private final LemmaRepository lemmaRepository;
     private final SiteModel indexingSite;
     private final Connection connection;
     private final AtomicBoolean indexingEnable;
+    private final PageIndexerService pageIndexerService;
 
     private ConcurrentSkipListSet<String> listLinks;
     private PageModel indexingPage;
@@ -57,6 +61,7 @@ public class PageIndexer extends RecursiveAction {
             SiteModel siteModel = siteRepository.findById(indexingSite.getId()).orElseThrow();
             siteModel.setStatusTime(LocalDateTime.now());
             siteRepository.save(siteModel);
+            pageIndexerService.indexHtml(indexingPage.getContent(), indexingPage);
         }
 
     }

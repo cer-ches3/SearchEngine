@@ -1,4 +1,4 @@
-package searchengine.services;
+package searchengine.services.Impl;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -9,10 +9,13 @@ import searchengine.dto.statistics.StatisticsData;
 import searchengine.dto.statistics.StatisticsResponse;
 import searchengine.dto.statistics.TotalStatistics;
 import searchengine.model.SiteModel;
+import searchengine.repositories.LemmaRepository;
 import searchengine.repositories.PageRepository;
 import searchengine.repositories.SiteRepository;
+import searchengine.services.StatisticsService;
 
 import java.net.MalformedURLException;
+import java.net.URL;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -23,6 +26,7 @@ public class StatisticsServiceImpl implements StatisticsService {
     private final SitesList sites;
     private final SiteRepository siteRepository;
     private final PageRepository pageRepository;
+    private final LemmaRepository lemmaRepository;
 
     @Override
     public StatisticsResponse getStatistics() throws MalformedURLException {
@@ -36,20 +40,20 @@ public class StatisticsServiceImpl implements StatisticsService {
 
         List<DetailedStatisticsItem> detailed = new ArrayList<>();
         List<SiteModel> sites = siteRepository.findAll();
-        for (SiteModel sitePage : sites) {
+        for (SiteModel siteModel : sites) {
             Site site = new Site();
-            site.setName(sitePage.getName());
-            site.setUrl(sitePage.getUrl());
+            site.setName(siteModel.getName());
+            site.setUrl(new URL(siteModel.getUrl()));
             DetailedStatisticsItem item = new DetailedStatisticsItem();
             item.setName(site.getName());
             item.setUrl(site.getUrl().toString());
-            int pages = pageRepository.findCountRecordBySiteId(sitePage.getId());
-            int lemmas = 0;
+            int pages = pageRepository.findCountRecordBySiteId(siteModel.getId());
+            int lemmas = lemmaRepository.findCountLemmasBySiteId(siteModel.getId());
             item.setPages(pages);
             item.setLemmas(lemmas);
-            item.setStatus(String.valueOf(sitePage.getStatus()));
-            item.setError(sitePage.getLastError());
-            item.setStatusTime(sitePage.getStatusTime());
+            item.setStatus(String.valueOf(siteModel.getStatus()));
+            item.setError(siteModel.getLastError());
+            item.setStatusTime(siteModel.getStatusTime());
             total.setPages(total.getPages() + pages);
             total.setLemmas(total.getLemmas() + lemmas);
             detailed.add(item);
