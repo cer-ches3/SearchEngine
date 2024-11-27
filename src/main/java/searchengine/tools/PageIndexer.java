@@ -16,6 +16,7 @@ import searchengine.repositories.SiteRepository;
 import searchengine.services.PageIndexerService;
 
 import java.io.IOException;
+import java.net.URL;
 import java.time.LocalDateTime;
 import java.util.concurrent.ConcurrentSkipListSet;
 import java.util.concurrent.RecursiveAction;
@@ -106,4 +107,32 @@ public class PageIndexer extends RecursiveAction {
         }
         indexingPage.setCode(errorCode);
     }
+
+    public void refreshPage(URL urlRefreshingPage) {
+        PageModel pageFromDB = pageRepository.findPageByPath(urlRefreshingPage.toString().substring(indexingSite.getUrl().length()));
+        if (pageFromDB != null) {
+            log.info("Сайт уже присутствует в БД. Обновление данных!");
+            pageIndexerService.refreshLemmaAndIndex(pageFromDB);
+        }else {
+            try {
+                org.jsoup.Connection connect = Jsoup.connect(urlRefreshingPage.toString())
+                        .userAgent(connection.getUserAgent())
+                        .referrer(connection.getReferer());
+                Document document = connect.get();
+                indexingPage = new PageModel();
+                indexingPage.setSiteId(indexingSite.getId());
+                indexingPage.setPath(urlRefreshingPage.toString().substring(indexingSite.getUrl().length()));
+                indexingPage.setCode(connect.response().statusCode());
+                indexingPage.setContent(document.html());
+                pageRepository.save(indexingPage);
+                pageIndexerService.refreshLemmaAndIndex(indexingPage);
+            } catch (IOException ex) {
+                errorIdentifier(ex, indexingPage);
+                pageRepository.save(indexingPage);
+                pageIndexerService.refreshLemmaAndIndex(indexingPage);
+            }
+        }
+    }
 }
+
+

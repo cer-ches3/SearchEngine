@@ -71,4 +71,17 @@ public class PageIndexerServiceImpl implements PageIndexerService {
             indexRepository.save(index);
         }
     }
+
+    @Override
+    public void refreshLemmaAndIndex(PageModel indexingPage) {
+        try {
+            Map<String, Integer> lemmas = lemmaService.getLemmasFromText(indexingPage.getContent());
+            indexRepository.deleteAllByPageId(indexingPage.getId());
+            lemmas.entrySet().parallelStream().forEach(entry -> saveLemma(entry.getKey(), entry.getValue(), indexingPage));
+            log.debug("Обновление индекса страницы " + " lemmas:" + lemmas.size());
+        } catch (IOException e) {
+            log.error(String.valueOf(e));
+            throw new RuntimeException(e);
+        }
+    }
 }

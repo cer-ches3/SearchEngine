@@ -3,17 +3,17 @@ package searchengine.controllers;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 import searchengine.config.SitesList;
 import searchengine.dto.responses.ErrorResponse;
 import searchengine.dto.responses.OkResponse;
 import searchengine.dto.statistics.StatisticsResponse;
+import searchengine.model.SiteModel;
 import searchengine.services.IndexingService;
 import searchengine.services.StatisticsService;
 
 import java.net.MalformedURLException;
+import java.net.URL;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -38,8 +38,8 @@ public class ApiController {
     public ResponseEntity startIndexing() {
         if (indexingEnabled.get()) {
             return ResponseEntity.status(HttpStatus.CONFLICT).body(new ErrorResponse("Индексация уже запущена!"));
-        }else {
-            executor.submit(()->{
+        } else {
+            executor.submit(() -> {
                 indexingEnabled.set(true);
                 indexingService.startIndexing(indexingEnabled);
             });
@@ -51,9 +51,28 @@ public class ApiController {
     public ResponseEntity stopIndexing() {
         if (!indexingEnabled.get()) {
             return ResponseEntity.status(HttpStatus.CONFLICT).body(new ErrorResponse("Индексация не запущена"));
-        }else {
+        } else {
             indexingEnabled.set(false);
             return ResponseEntity.status(HttpStatus.OK).body(new OkResponse());
         }
+    }
+
+    @PostMapping("/indexPage")
+    public ResponseEntity indexPage(@RequestParam String url) throws MalformedURLException {
+        URL urlRefreshingPage = new URL(url);
+        SiteModel refreshingSite = new SiteModel();
+        try {
+            sitesList.getSites().stream().filter(site -> urlRefreshingPage.getHost().equals(site.getUrl().getHost())).findFirst()
+                    .map(site -> {
+                        refreshingSite.setName(site.getName());
+                        refreshingSite.setUrl(site.getUrl().toString());
+                        return refreshingSite;
+                    }).orElseThrow();
+        } catch (RuntimeException ex) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(new ErrorResponse("Данная страница находится за пределами сайтов указанных в конфигурационном файле"));
+        }
+        indexingService.refreshPage(refreshingSite, urlRefreshingPage);
+        return ResponseEntity.status(HttpStatus.OK).body(new OkResponse());
     }
 }

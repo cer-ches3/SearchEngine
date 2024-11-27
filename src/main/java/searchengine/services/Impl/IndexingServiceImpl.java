@@ -15,6 +15,7 @@ import searchengine.services.IndexingService;
 import searchengine.services.PageIndexerService;
 import searchengine.tools.PageIndexer;
 
+import java.net.URL;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -50,8 +51,11 @@ public class IndexingServiceImpl implements IndexingService {
     }
 
     public void deleteSitesAndPagesFromDB() {
-        pageRepository.deleteAll();
-        siteRepository.deleteAll();
+        List<SiteModel> listSitesFromDB = siteRepository.findAll();
+        listSitesFromDB.forEach(siteModel -> {
+            pageRepository.deleteAllBySiteId(siteModel.getId());
+            siteRepository.deleteById(siteModel.getId());
+        });
         log.info("База данных очищена!");
     }
 
@@ -99,7 +103,40 @@ public class IndexingServiceImpl implements IndexingService {
             thread.join();
         }
         indexingEnabled.set(false);
-        log.info("Индексация сайтов завершена!\n Время индексации: " + (System.currentTimeMillis() - startTime));
+        long endTime = System.currentTimeMillis();
+        log.info("Индексация сайтов завершена! Время индексации: " + timeConverter(startTime,endTime));
+    }
+
+    @Override
+    public void refreshPage(SiteModel refreshingSite, URL urlRefreshingPage) {
+        SiteModel siteModelFromDB = siteRepository.getSiteModelByUrl(refreshingSite.getUrl());
+        refreshingSite.setId(siteModelFromDB.getId());
+        try {
+            log.info("Запущена переиндексация страницы: " + urlRefreshingPage);
+            PageIndexer refPageIndexer = new PageIndexer(siteRepository, pageRepository,lemmaRepository, refreshingSite, connection, indexingEnabled, pageIndexerService);
+            refPageIndexer.refreshPage(urlRefreshingPage);
+        } catch (SecurityException ex) {
+            SiteModel sitePage = siteRepository.findById(refreshingSite.getId()).orElseThrow();
+            sitePage.setStatus(StatusIndexing.FAILED);
+            sitePage.setLastError(ex.getMessage());
+            siteRepository.save(sitePage);
+        }
+        log.info("Проиндексирован сайт: " + refreshingSite.getName());
+        SiteModel sitePage = siteRepository.findById(refreshingSite.getId()).orElseThrow();
+        sitePage.setStatus(StatusIndexing.INDEXED);
+        sitePage.setStatusTime(LocalDateTime.now());
+        sitePage.setLastError(null);
+        siteRepository.save(sitePage);
+    }
+
+    public String timeConverter(Long startTime, Long endTime) {
+        long resultTime = endTime - startTime;
+
+        long hour = resultTime / 3600000;
+        long minute = resultTime % 3600000 / 60000;
+        long second = resultTime % 60000 / 1000;
+
+        return hour + " ч. " + minute + " мин. " + second + " сек.";
     }
 }
 
