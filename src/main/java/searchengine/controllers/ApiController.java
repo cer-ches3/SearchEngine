@@ -9,6 +9,7 @@ import searchengine.dto.responses.ErrorResponse;
 import searchengine.dto.responses.OkResponse;
 import searchengine.dto.statistics.StatisticsResponse;
 import searchengine.model.SiteModel;
+import searchengine.services.SearchService;
 import searchengine.services.IndexingService;
 import searchengine.services.StatisticsService;
 
@@ -24,6 +25,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 public class ApiController {
     private final StatisticsService statisticsService;
     private final IndexingService indexingService;
+    private final SearchService searchService;
     private final ExecutorService executor = Executors.newSingleThreadExecutor();
     private final AtomicBoolean indexingEnabled = new AtomicBoolean(false);
     private final SitesList sitesList;
@@ -74,5 +76,21 @@ public class ApiController {
         }
         indexingService.refreshPage(refreshingSite, urlRefreshingPage);
         return ResponseEntity.status(HttpStatus.OK).body(new OkResponse());
+    }
+
+    @GetMapping("/search")
+    public ResponseEntity<Object> search(
+            @RequestParam String query,
+            @RequestParam String site,
+            @RequestParam (defaultValue = "0") Integer offset,
+            @RequestParam (defaultValue = "10") Integer limit
+    ){
+        if (query == null || query.isEmpty() || query.isBlank()) {
+            return ResponseEntity.badRequest().body(new ErrorResponse("Задан пустой поисковый запрос"));
+        }
+        if (site == null || site.isEmpty() || site.isBlank()) {
+            return ResponseEntity.badRequest().body(new ErrorResponse("Не указан сайт для поиска"));
+        }
+        return searchService.search(query, site, offset, limit);
     }
 }

@@ -2,6 +2,7 @@ package searchengine.services.Impl;
 
 import lombok.extern.slf4j.Slf4j;
 import org.apache.lucene.morphology.LuceneMorphology;
+import org.apache.lucene.morphology.WrongCharaterException;
 import org.apache.lucene.morphology.russian.RussianLuceneMorphology;
 import org.jsoup.Jsoup;
 import org.springframework.stereotype.Service;
@@ -56,5 +57,17 @@ public class LemmaServiceImpl implements LemmaService {
             }
         }
         return true;
+    }
+
+    public String getLemmaByWord1(String word) {
+        String preparedWord = word.toLowerCase();
+        try {
+            List<String> normalWordForms = luceneMorphology.getNormalForms(preparedWord);
+            String wordInfo = luceneMorphology.getMorphInfo(preparedWord).toString();
+            return normalWordForms.get(0);
+        } catch (WrongCharaterException ex) {
+            log.debug(ex.getMessage());
+        }
+        return "";
     }
 }

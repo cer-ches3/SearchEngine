@@ -35,7 +35,7 @@ public class PageIndexerServiceImpl implements PageIndexerService {
     }
 
     public void saveLemma(String k, Integer v, PageModel indexingPage) {
-        LemmaModel existLemmaInDB = lemmaRepository.lemmaExist(k, indexingPage.getSiteId());
+        LemmaModel existLemmaInDB = lemmaRepository.getLemmaExist(k, indexingPage.getSiteId());
         if (existLemmaInDB != null) {
             existLemmaInDB.setFrequency(existLemmaInDB.getFrequency() + v);
             lemmaRepository.saveAndFlush(existLemmaInDB);
@@ -57,7 +57,7 @@ public class PageIndexerServiceImpl implements PageIndexerService {
     }
 
     private void createIndex(PageModel indexingPage, LemmaModel lemmaInDB, Integer rank) {
-        IndexModel indexSearchExist = indexRepository.indexSearchExist(indexingPage.getId(), lemmaInDB.getId());
+        IndexModel indexSearchExist = indexRepository.getIndexSearchExist(indexingPage.getId(), lemmaInDB.getId());
         if (indexSearchExist != null) {
             indexSearchExist.setLemmaCount(indexSearchExist.getLemmaCount() + rank);
             indexRepository.save(indexSearchExist);

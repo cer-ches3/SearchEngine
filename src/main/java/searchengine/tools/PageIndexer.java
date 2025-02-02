@@ -109,7 +109,7 @@ public class PageIndexer extends RecursiveAction {
     }
 
     public void refreshPage(URL urlRefreshingPage) {
-        PageModel pageFromDB = pageRepository.findPageByPath(urlRefreshingPage.toString().substring(indexingSite.getUrl().length()));
+        PageModel pageFromDB = pageRepository.getPageByPath(urlRefreshingPage.toString().substring(indexingSite.getUrl().length()));
         if (pageFromDB != null) {
             log.info("Сайт уже присутствует в БД. Обновление данных!");
             pageIndexerService.refreshLemmaAndIndex(pageFromDB);
