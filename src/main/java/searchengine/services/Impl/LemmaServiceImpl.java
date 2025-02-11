@@ -49,17 +49,7 @@ public class LemmaServiceImpl implements LemmaService {
         }
     }
 
-    private boolean checkWord(String word) {
-        List<String> wordBaseForms = luceneMorphology.getMorphInfo(word);
-        for (String wordBaseForm : wordBaseForms) {
-            if (wordBaseForm.contains("ПРЕДЛ") || wordBaseForm.contains("СОЮЗ") || wordBaseForm.contains("МЕЖД")) {
-                return false;
-            }
-        }
-        return true;
-    }
-
-    public String getLemmaByWord1(String word) {
+    public String getLemmaByWord(String word) {
         String preparedWord = word.toLowerCase();
         try {
             List<String> normalWordForms = luceneMorphology.getNormalForms(preparedWord);
@@ -69,5 +59,15 @@ public class LemmaServiceImpl implements LemmaService {
             log.debug(ex.getMessage());
         }
         return "";
+    }
+
+    private boolean checkWord(String word) {
+        List<String> wordBaseForms = luceneMorphology.getMorphInfo(word);
+        for (String wordBaseForm : wordBaseForms) {
+            if (wordBaseForm.contains("ПРЕДЛ") || wordBaseForm.contains("СОЮЗ") || wordBaseForm.contains("МЕЖД")) {
+                return false;
+            }
+        }
+        return true;
     }
 }

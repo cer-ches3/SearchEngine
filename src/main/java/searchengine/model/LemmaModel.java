@@ -1,8 +1,6 @@
 package searchengine.model;
 
-import lombok.NoArgsConstructor;
-import lombok.Getter;
-import lombok.Setter;
+import lombok.*;
 import org.hibernate.annotations.OnDelete;
 import org.hibernate.annotations.OnDeleteAction;
 
@@ -11,8 +9,7 @@ import javax.persistence.*;
 @Entity
 @Table(name = "lemma", uniqueConstraints = @UniqueConstraint(columnNames = {"lemma","site_id"}))
 @NoArgsConstructor
-@Setter
-@Getter
+@Data
 public class LemmaModel {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

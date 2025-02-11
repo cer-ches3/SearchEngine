@@ -2,10 +2,12 @@ package searchengine.dto;
 
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import lombok.ToString;
 import searchengine.model.PageModel;
 
 @Data
 @NoArgsConstructor
+
 public class RankDto {
     private Integer pageId;
     private PageModel pageModel;

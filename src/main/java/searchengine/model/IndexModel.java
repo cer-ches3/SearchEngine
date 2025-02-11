@@ -3,6 +3,7 @@ package searchengine.model;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import lombok.ToString;
 import org.hibernate.annotations.OnDelete;
 import org.hibernate.annotations.OnDeleteAction;
 
@@ -37,4 +38,14 @@ public class IndexModel {
     @OnDelete(action = OnDeleteAction.CASCADE)
     @JoinColumn(name = "lemma_id", insertable = false, updatable = false, nullable = false)
     private LemmaModel lemmaModel;
+
+    @Override
+    public String toString() {
+        return "IndexModel{" +
+                "id=" + id +
+                ", pageId=" + pageId +
+                ", lemmaId=" + lemmaId +
+                ", lemmaCount=" + lemmaCount +
+                '}';
+    }
 }
