@@ -3,12 +3,11 @@ package searchengine.model;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
-import lombok.ToString;
 
 import javax.persistence.*;
 
 @Entity
-@Table(name = "page",  indexes = @Index(name = "path_index", columnList = "path"))
+@Table(name = "page", indexes = @Index(name = "path_index", columnList = "path"))
 @NoArgsConstructor
 @Getter
 @Setter

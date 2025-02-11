@@ -2,7 +2,6 @@ package searchengine.dto;
 
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import lombok.ToString;
 import searchengine.model.PageModel;
 
 @Data

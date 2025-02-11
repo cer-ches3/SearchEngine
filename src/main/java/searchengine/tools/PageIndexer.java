@@ -113,7 +113,7 @@ public class PageIndexer extends RecursiveAction {
         if (pageFromDB != null) {
             log.info("Сайт уже присутствует в БД. Обновление данных!");
             pageIndexerService.refreshLemmaAndIndex(pageFromDB);
-        }else {
+        } else {
             try {
                 org.jsoup.Connection connect = Jsoup.connect(urlRefreshingPage.toString())
                         .userAgent(connection.getUserAgent())

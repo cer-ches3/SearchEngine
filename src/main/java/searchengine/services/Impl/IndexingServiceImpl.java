@@ -78,7 +78,7 @@ public class IndexingServiceImpl implements IndexingService {
         for (SiteModel indexingSite : listAllSitesFromDB) {
             Runnable indexSite = () -> {
                 log.info("Запущена индексация сайта " + indexingSite.getName());
-                new ForkJoinPool().invoke(new PageIndexer(siteRepository, pageRepository,lemmaRepository, indexingSite, connection, indexingEnabled, pageIndexerService));
+                new ForkJoinPool().invoke(new PageIndexer(siteRepository, pageRepository, lemmaRepository, indexingSite, connection, indexingEnabled, pageIndexerService));
 
                 if (!indexingEnabled.get()) {
                     log.warn("Индексация сайта " + indexingSite.getUrl() + " остановлена пользователем!");
@@ -104,7 +104,7 @@ public class IndexingServiceImpl implements IndexingService {
         }
         indexingEnabled.set(false);
         long endTime = System.currentTimeMillis();
-        log.info("Индексация сайтов завершена! Время индексации: " + timeConverter(startTime,endTime));
+        log.info("Индексация сайтов завершена! Время индексации: " + timeConverter(startTime, endTime));
     }
 
     @Override
@@ -113,7 +113,7 @@ public class IndexingServiceImpl implements IndexingService {
         refreshingSite.setId(siteModelFromDB.getId());
         try {
             log.info("Запущена переиндексация страницы: " + urlRefreshingPage);
-            PageIndexer refPageIndexer = new PageIndexer(siteRepository, pageRepository,lemmaRepository, refreshingSite, connection, indexingEnabled, pageIndexerService);
+            PageIndexer refPageIndexer = new PageIndexer(siteRepository, pageRepository, lemmaRepository, refreshingSite, connection, indexingEnabled, pageIndexerService);
             refPageIndexer.refreshPage(urlRefreshingPage);
         } catch (SecurityException ex) {
             SiteModel sitePage = siteRepository.findById(refreshingSite.getId()).orElseThrow();
