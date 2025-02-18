@@ -1,0 +1,11 @@
+searchengine
+searchengine.config
+searchengine.controllers
+searchengine.dto
+searchengine.dto.responses
+searchengine.dto.statistics
+searchengine.model
+searchengine.repositories
+searchengine.services
+searchengine.services.Impl
+searchengine.tools

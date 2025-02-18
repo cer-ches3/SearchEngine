@@ -14,11 +14,16 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * Сервис поиска лемм из html-кода страницы
+ * с последующим их добавлением в БД.
+ * Для работы использует библиотеку LuceneMorphology.
+ * @author Сергей Сергеевич Ч
+ */
 @Service
 @Slf4j
 public class LemmaServiceImpl implements LemmaService {
-    private LuceneMorphology luceneMorphology;
-
+    public LuceneMorphology luceneMorphology;
     {
         try {
             luceneMorphology = new RussianLuceneMorphology();
@@ -27,6 +32,12 @@ public class LemmaServiceImpl implements LemmaService {
         }
     }
 
+    /**
+     * Парсинг html-кода страницы и
+     * передача слов в метод получения лемм.
+     * @param html
+     * @return
+     */
     @Override
     public Map<String, Integer> getLemmasFromText(String html) {
         Map<String, Integer> lemmasInText = new HashMap<>();
@@ -36,6 +47,12 @@ public class LemmaServiceImpl implements LemmaService {
         return lemmasInText;
     }
 
+    /**
+     * Получение леммы переданного слова,
+     * используя библиотеку LuceneMorphology.
+     * @param word
+     * @param lemmasInText
+     */
     public void getLemmaByWord(String word, Map<String, Integer> lemmasInText) {
         try {
             if (!checkWord(word)) {
@@ -49,6 +66,14 @@ public class LemmaServiceImpl implements LemmaService {
         }
     }
 
+    /**
+     * Получение леммы переданного слова,
+     * используя библиотеку LuceneMorphology.
+     * Используется только в SearchServiceImpl
+     * для поиска лемм из поискового запроса.
+     * @param word
+     * @return
+     */
     public String getLemmaByWord(String word) {
         String preparedWord = word.toLowerCase();
         try {
@@ -61,6 +86,13 @@ public class LemmaServiceImpl implements LemmaService {
         return "";
     }
 
+    /**
+     * Проверка на то, что переданное слово не
+     * является союзом, предлогом или междометием,
+     * используя библиотеку LuceneMorphology.
+     * @param word
+     * @return
+     */
     private boolean checkWord(String word) {
         List<String> wordBaseForms = luceneMorphology.getMorphInfo(word);
         for (String wordBaseForm : wordBaseForms) {

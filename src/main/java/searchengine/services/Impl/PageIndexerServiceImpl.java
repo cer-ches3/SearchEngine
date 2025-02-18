@@ -15,6 +15,11 @@ import searchengine.services.PageIndexerService;
 import java.io.IOException;
 import java.util.Map;
 
+/**
+ * Сервис добавления лемм и индексов
+ * проиндексированных страниц в БД.
+ * @author Сергей Сергеевич Ч
+ */
 @Slf4j
 @Service
 @RequiredArgsConstructor
@@ -23,6 +28,12 @@ public class PageIndexerServiceImpl implements PageIndexerService {
     private final LemmaRepository lemmaRepository;
     private final IndexRepository indexRepository;
 
+    /**
+     * Получение списка лемм и передача
+     * для лемм для сохранения в БД.
+     * @param html
+     * @param indexingPage
+     */
     @Override
     public void indexHtml(String html, PageModel indexingPage) {
         try {
@@ -34,6 +45,12 @@ public class PageIndexerServiceImpl implements PageIndexerService {
         }
     }
 
+    /**
+     * Создание лемм в БД.
+     * @param k
+     * @param v
+     * @param indexingPage
+     */
     public void saveLemma(String k, Integer v, PageModel indexingPage) {
         LemmaModel existLemmaInDB = lemmaRepository.getLemmaExist(k, indexingPage.getSiteId());
         if (existLemmaInDB != null) {
@@ -56,7 +73,13 @@ public class PageIndexerServiceImpl implements PageIndexerService {
         }
     }
 
-    private void createIndex(PageModel indexingPage, LemmaModel lemmaInDB, Integer rank) {
+    /**
+     * Создание индексов в БД.
+     * @param indexingPage
+     * @param lemmaInDB
+     * @param rank
+     */
+    public void createIndex(PageModel indexingPage, LemmaModel lemmaInDB, Integer rank) {
         IndexModel indexSearchExist = indexRepository.getIndexSearchExist(indexingPage.getId(), lemmaInDB.getId());
         if (indexSearchExist != null) {
             indexSearchExist.setLemmaCount(indexSearchExist.getLemmaCount() + rank);
@@ -72,6 +95,10 @@ public class PageIndexerServiceImpl implements PageIndexerService {
         }
     }
 
+    /**
+     * Обновление лемм и индексов, уже существующих в БД.
+     * @param indexingPage
+     */
     @Override
     public void refreshLemmaAndIndex(PageModel indexingPage) {
         try {

@@ -20,6 +20,10 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * Сервис, возвращающий статистику по сайтам.
+ * @author Сергей Сергеевич Ч
+ */
 @Service
 @RequiredArgsConstructor
 public class StatisticsServiceImpl implements StatisticsService {
@@ -28,6 +32,12 @@ public class StatisticsServiceImpl implements StatisticsService {
     private final PageRepository pageRepository;
     private final LemmaRepository lemmaRepository;
 
+    /**
+     * Метод возвращает актуальную статистику,
+     * по проиндексированным страницам.
+     * @return
+     * @throws MalformedURLException если не корректный URL
+     */
     @Override
     public StatisticsResponse getStatistics() throws MalformedURLException {
         List<SiteModel> sitePages = siteRepository.findAll();
@@ -67,7 +77,13 @@ public class StatisticsServiceImpl implements StatisticsService {
         return response;
     }
 
-    StatisticsResponse getStartStatistics() {
+    /**
+     * Метод возвращает пустую статистику,
+     * если индексация страниц еще не запускалась и
+     * БД пуста.
+     * @return
+     */
+    public StatisticsResponse getStartStatistics() {
         TotalStatistics total = new TotalStatistics();
         total.setSites(sites.getSites().size());
         total.setIndexing(false);

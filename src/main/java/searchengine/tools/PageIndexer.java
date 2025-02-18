@@ -64,7 +64,6 @@ public class PageIndexer extends RecursiveAction {
             siteRepository.save(siteModel);
             pageIndexerService.indexHtml(indexingPage.getContent(), indexingPage);
         }
-
     }
 
     public ConcurrentSkipListSet<String> getListLinks(String url) {
@@ -108,6 +107,9 @@ public class PageIndexer extends RecursiveAction {
         indexingPage.setCode(errorCode);
     }
 
+    /**
+     * @param urlRefreshingPage
+     */
     public void refreshPage(URL urlRefreshingPage) {
         PageModel pageFromDB = pageRepository.getPageByPath(urlRefreshingPage.toString().substring(indexingSite.getUrl().length()));
         if (pageFromDB != null) {
@@ -134,5 +136,3 @@ public class PageIndexer extends RecursiveAction {
         }
     }
 }
-
-

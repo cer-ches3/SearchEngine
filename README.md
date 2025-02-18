@@ -20,6 +20,18 @@
 
 Java Core, Spring Boot, Hibernate, Apache Maven, Apache Lucene, Lombok, Jsoup 
 
+<u><strong>Начало работы:</strong></u>
+
+Установите на свой компьютер MySQL-сервер, если он ещё не установлен, и создайте в нём пустую базу данных search_engine.
+В application.yaml укажите следующий путь к базе данных:
+<u>url: jdbc:mysql://localhost:3306/search_engine?useSSL=false&requireSSL=false&allowPublicKeyRetrieval=true</u>
+
+Если у вас нет возможности установить MySQL-сервер, то вы можете запустить Базу данных в контейнере Docker.
+Для этого сделаете следующее:
+1. Установите и запустите Docker на вашем устройстве;
+2. Запустите контейнер Docker, выполнив в терминале команду <u>docker-compose up</u>;
+3. Укажите путь к базе данных: <u>jdbc:mysql://localhost:3307/search_engine_cont?useSSL=false&requireSSL=false&allowPublicKeyRetrieval=true</u>
+
 <u><strong>Как работает поисковый движок:</strong></u>
 
 1. В конфигурационном файле application.yaml нужно задать перечень сайтов, которые будут индексироваться.

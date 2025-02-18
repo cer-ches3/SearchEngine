@@ -7,6 +7,7 @@ import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
+import searchengine.config.Site;
 import searchengine.dto.RankDto;
 import searchengine.dto.responses.ErrorResponse;
 import searchengine.dto.responses.SearchDataResponse;
@@ -26,7 +27,11 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
-
+/**
+ * Сервис, обеспечивающий поиск страниц
+ * по ключевым словам.
+ * @author Сергей Сергеевич Ч
+ */
 @Service
 @RequiredArgsConstructor
 @Slf4j
@@ -38,32 +43,103 @@ public class SearchServiceImpl implements SearchService {
     private final LemmaServiceImpl lemmaService;
     private final double frequencyLimitProportion = 60;
 
+    private List<LemmaModel> lemmasForSearch;
+    private Map<Integer, IndexModel> indexByLemmas;
+    private List<RankDto> relevancePagesSorted;
+
+    /**
+     * Поиск по отдельным сайтам.
+     * @param query
+     * @param site
+     * @param offset
+     * @param limit
+     * @return
+     */
     @Override
     public ResponseEntity<Object> search(String query, String site, Integer offset, Integer limit) {
         if (!checkStatusIndexing(site)) {
             return ResponseEntity.badRequest().body(new ErrorResponse("Индексация сайта " + site + " не завершена. Поиск не возможен."));
         }
         SiteModel siteFromQuery = siteRepository.getSiteModelByUrl(site);
-        Integer countPages = pageRepository.getCountPagesBySiteId(siteFromQuery.getId());
 
-        //Получение лемм из текста запроса
-        List<LemmaModel> lemmasForSearch = lemmaService.getLemmasFromText(query).keySet()
+        getLemmasForSearch(query, siteFromQuery);
+        if (lemmasForSearch.isEmpty()) {
+            return ResponseEntity.badRequest().body(new ErrorResponse("Поиск не дал результатов."));
+        }
+
+        getIndexByLemmas(lemmasForSearch);
+        if (indexByLemmas.isEmpty()) {
+            return ResponseEntity.ok().body(new SearchResponse(true, 0, Collections.emptyList()));
+        }
+
+        getRelevancePagesSorted();
+
+        return getResultSearch(limit, relevancePagesSorted);
+    }
+
+    /**
+     * Поиск по всем сайтам, присутствующим в БД.
+     * @param query
+     * @param sites
+     * @param offset
+     * @param limit
+     * @return
+     */
+    @Override
+    public ResponseEntity<Object> searchAllSite(String query, List<Site> sites, Integer offset, Integer limit) {
+        List<String> sitesList = new ArrayList<>();
+        for (Site site : sites) {
+            sitesList.add(site.getUrl().toString());
+        }
+        sitesList.removeIf(site -> !checkStatusIndexing(site));
+
+        List<RankDto> relevancePagesSortedAllSites = new ArrayList<>();
+
+        for (String site : sitesList) {
+            SiteModel siteFromQuery = siteRepository.getSiteModelByUrl(site);
+
+            getLemmasForSearch(query, siteFromQuery);
+            if (lemmasForSearch.isEmpty()) {
+                return ResponseEntity.badRequest().body(new ErrorResponse("Поиск не дал результатов."));
+            }
+
+            getIndexByLemmas(lemmasForSearch);
+
+            relevancePagesSortedAllSites.addAll(getRelevancePagesSorted());
+        }
+        relevancePagesSortedAllSites.sort(Comparator.comparingDouble(RankDto::getRelativeRelevance).reversed());
+
+        return getResultSearch(limit, relevancePagesSortedAllSites);
+    }
+
+    /**
+     * Получение лемм из поискового запроса и
+     * сортировка лемм по возрастанию frequency.
+     * @param query
+     * @param siteFromQuery
+     * @return
+     */
+    private List<LemmaModel> getLemmasForSearch(String query, SiteModel siteFromQuery) {
+        lemmasForSearch = lemmaService.getLemmasFromText(query).keySet()
                 .stream()
                 .map(lemma -> lemmaRepository.getLemmasByLemmaAndSiteId(lemma, siteFromQuery.getId()))
                 .flatMap(java.util.Collection::stream).collect(Collectors.toList());
         lemmasForSearch.removeIf(lemma -> {
             Integer lemmaFrequency = lemmaRepository.getCountPageByLemma(lemma.getLemma(), lemma.getSiteId());
+            Integer countPages = pageRepository.getCountPagesBySiteId(siteFromQuery.getId());
             return ((double) lemmaFrequency / countPages > frequencyLimitProportion);
         });
-        if (lemmasForSearch.isEmpty()) {
-            return ResponseEntity.badRequest().body(new ErrorResponse("Поиск не дал результатов."));
-        }
-
-        //Сортировка полученного списка по frequency
         lemmasForSearch.sort(Comparator.comparing(LemmaModel::getFrequency));
+        return lemmasForSearch;
+    }
 
-        //Поиск страниц по леммам
-        Map<Integer, IndexModel> indexByLemmas = indexRepository.getIndexesByLemma(lemmasForSearch.get(0).getId())
+    /**
+     * Получение списка индексов по леммам.
+     * @param lemmasForSearch
+     * @return
+     */
+    private Map<Integer, IndexModel> getIndexByLemmas(List<LemmaModel> lemmasForSearch) {
+        indexByLemmas = indexRepository.getIndexesByLemma(lemmasForSearch.get(0).getId())
                 .stream()
                 .collect(Collectors.toMap(IndexModel::getPageId, index -> index));
         for (int i = 1; i < lemmasForSearch.size(); i++) {
@@ -74,11 +150,15 @@ public class SearchServiceImpl implements SearchService {
             }
             indexByLemmas.entrySet().removeIf(entry -> !pagesToSave.contains(entry.getKey()));
         }
-        if (indexByLemmas.isEmpty()) {
-            return ResponseEntity.ok().body(new SearchResponse(true, 0, Collections.emptyList()));
-        }
+        return indexByLemmas;
+    }
 
-        //Калькулятор релевантности
+    /**
+     * Получение списка страниц, соответствующих поисковому запросу,
+     * отсортированного по убыванию релевантности страниц.
+     * @return
+     */
+    private List<RankDto> getRelevancePagesSorted(){
         Set<RankDto> relevancePages = new HashSet<>();
         for (IndexModel index : indexByLemmas.values()) {
             RankDto rankPage = new RankDto();
@@ -94,11 +174,17 @@ public class SearchServiceImpl implements SearchService {
             rankPage.setRelativeRelevance(rankPage.getAbsRelevance() / rankPage.getMaxLemmaRank());
             relevancePages.add(rankPage);
         }
+        relevancePagesSorted = relevancePages.stream().sorted(Comparator.comparingDouble(RankDto::getRelativeRelevance).reversed()).toList();
+        return relevancePagesSorted;
+    }
 
-        //Сортировка страниц по релевантности
-        List<RankDto> relevancePagesSorted = relevancePages.stream().sorted(Comparator.comparingDouble(RankDto::getRelativeRelevance).reversed()).toList();
-
-        //Выдача результата
+    /**
+     * Формирование и выдача результата поиска.
+     * @param limit
+     * @param relevancePagesSorted
+     * @return
+     */
+    private ResponseEntity getResultSearch(int limit, List<RankDto> relevancePagesSorted) {
         List<String> listLemmasFromSearch = new ArrayList<>(lemmasForSearch.stream().map(LemmaModel::getLemma).toList());
         List<SearchDataResponse> searchDataResponses = new ArrayList<>();
 
@@ -132,7 +218,7 @@ public class SearchServiceImpl implements SearchService {
         }
         List<SearchDataResponse> sortedSearchDataResponse = searchDataResponses.stream().sorted(Comparator.comparingDouble(SearchDataResponse::getRelevance).reversed()).toList();
         List<SearchDataResponse> listSearchDataResponseByLimit = new ArrayList<>();
-        for (int i = limit * offset; i <= limit * offset + limit; i++) {
+        for (int i = 0; i < limit; i++) {
             try {
                 listSearchDataResponseByLimit.add(sortedSearchDataResponse.get(i));
             } catch (IndexOutOfBoundsException ex) {
@@ -143,11 +229,22 @@ public class SearchServiceImpl implements SearchService {
         return ResponseEntity.ok(result);
     }
 
+    /**
+     * Проверка статуса индексации
+     * переданного сайта.
+     * @param site
+     * @return
+     */
     private Boolean checkStatusIndexing(String site) {
         StatusIndexing indexingSuccessful = StatusIndexing.INDEXED;
         return siteRepository.getSiteModelByUrl(site).getStatus().equals(indexingSuccessful);
     }
 
+    /**
+     * Получение сниппета.
+     * @param text
+     * @return
+     */
     private String extractSnippet(String text) {
         //Находим выделенное слово
         String highlightedWord = "<b>(.*?)</b>";

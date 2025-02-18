@@ -22,7 +22,12 @@ import java.util.List;
 import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-
+/**
+ * Сервис очищает базу данных,
+ * создаёт список сайтов для индексации и
+ * запускает индексацию каждой страницы.
+ * @author Сергей Сергеевич Ч
+ */
 @Service
 @Slf4j
 @RequiredArgsConstructor
@@ -34,9 +39,13 @@ public class IndexingServiceImpl implements IndexingService {
     private final List<SiteModel> listAllSitesFromDB;
     private final Connection connection;
     private final PageIndexerService pageIndexerService;
-
     private volatile AtomicBoolean indexingEnabled;
 
+    /**
+     * Последовательный запуск методов сервиса
+     * @param indexingEnabled
+     * @throws RuntimeException,InterruptedException если возникают ошибки при индексации
+     */
     @Override
     public void startIndexing(AtomicBoolean indexingEnabled) {
         this.indexingEnabled = indexingEnabled;
@@ -50,6 +59,9 @@ public class IndexingServiceImpl implements IndexingService {
         }
     }
 
+    /**
+     * Очистка базы данных
+     */
     public void deleteSitesAndPagesFromDB() {
         List<SiteModel> listSitesFromDB = siteRepository.findAll();
         listSitesFromDB.forEach(siteModel -> {
@@ -59,6 +71,9 @@ public class IndexingServiceImpl implements IndexingService {
         log.info("База данных очищена!");
     }
 
+    /**
+     * Создание списка сайтов в БД
+     */
     public void addSiteToDB() {
         for (Site site : sitesForIndexing.getSites()) {
             SiteModel newSite = new SiteModel();
@@ -71,6 +86,10 @@ public class IndexingServiceImpl implements IndexingService {
         }
     }
 
+    /**
+     * Запуск индексации сайтов в многопоточном режиме
+     * @throws InterruptedException
+     */
     public void indexingAllSites() throws InterruptedException {
         long startTime = System.currentTimeMillis();
         listAllSitesFromDB.addAll(siteRepository.findAll());
@@ -97,7 +116,6 @@ public class IndexingServiceImpl implements IndexingService {
             Thread thread = new Thread(indexSite);
             indexingThreadList.add(thread);
             thread.start();
-
         }
         for (Thread thread : indexingThreadList) {
             thread.join();
@@ -107,6 +125,11 @@ public class IndexingServiceImpl implements IndexingService {
         log.info("Индексация сайтов завершена! Время индексации: " + timeConverter(startTime, endTime));
     }
 
+    /**
+     * Запуск переиндексации страницы, уже существующей в БД.
+     * @param refreshingSite
+     * @param urlRefreshingPage
+     */
     @Override
     public void refreshPage(SiteModel refreshingSite, URL urlRefreshingPage) {
         SiteModel siteModelFromDB = siteRepository.getSiteModelByUrl(refreshingSite.getUrl());
@@ -129,6 +152,13 @@ public class IndexingServiceImpl implements IndexingService {
         siteRepository.save(sitePage);
     }
 
+    /**
+     * Конвертер времени, затраченного на
+     * индексацию сайтов.
+     * @param startTime
+     * @param endTime
+     * @return
+     */
     public String timeConverter(Long startTime, Long endTime) {
         long resultTime = endTime - startTime;
 

@@ -4,6 +4,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import searchengine.config.Site;
 import searchengine.config.SitesList;
 import searchengine.dto.responses.ErrorResponse;
 import searchengine.dto.responses.OkResponse;
@@ -15,10 +16,16 @@ import searchengine.services.StatisticsService;
 
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+/**
+ * Контроллер, отвечающий за работу
+ * всех сервисов поискового движка.
+ * @author Сергей Сергеевич Ч
+ */
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/api")
@@ -30,12 +37,23 @@ public class ApiController {
     private final AtomicBoolean indexingEnabled = new AtomicBoolean(false);
     private final SitesList sitesList;
 
-
+    /**
+     * Получение статистики по сайтам.
+     * @return
+     */
     @GetMapping("/statistics")
-    public ResponseEntity<StatisticsResponse> statistics() throws MalformedURLException {
-        return ResponseEntity.ok(statisticsService.getStatistics());
+    public ResponseEntity<StatisticsResponse> statistics() {
+        try {
+            return ResponseEntity.ok(statisticsService.getStatistics());
+        } catch (MalformedURLException e) {
+            throw new RuntimeException(e);
+        }
     }
 
+    /**
+     * Запуск индексации сайтов.
+     * @return
+     */
     @GetMapping("/startIndexing")
     public ResponseEntity startIndexing() {
         if (indexingEnabled.get()) {
@@ -49,6 +67,10 @@ public class ApiController {
         }
     }
 
+    /**
+     * Остановка индексации сайтов.
+     * @return
+     */
     @GetMapping("/stopIndexing")
     public ResponseEntity stopIndexing() {
         if (!indexingEnabled.get()) {
@@ -59,6 +81,12 @@ public class ApiController {
         }
     }
 
+    /**
+     * Запуск индексации страниц.
+     * @param url
+     * @return
+     * @throws MalformedURLException
+     */
     @PostMapping("/indexPage")
     public ResponseEntity indexPage(@RequestParam String url) throws MalformedURLException {
         URL urlRefreshingPage = new URL(url);
@@ -78,18 +106,27 @@ public class ApiController {
         return ResponseEntity.status(HttpStatus.OK).body(new OkResponse());
     }
 
+    /**
+     * Поиск сайтов по ключевым словам.
+     * @param query
+     * @param site
+     * @param offset
+     * @param limit
+     * @return
+     */
     @GetMapping("/search")
     public ResponseEntity<Object> search(
             @RequestParam String query,
-            @RequestParam String site,
-            @RequestParam(defaultValue = "0") Integer offset,
+            @RequestParam(required = false) String site,
+            @RequestParam(defaultValue = "10") Integer offset,
             @RequestParam(defaultValue = "10") Integer limit
     ) {
         if (query == null || query.isEmpty() || query.isBlank()) {
             return ResponseEntity.badRequest().body(new ErrorResponse("Задан пустой поисковый запрос"));
         }
         if (site == null || site.isEmpty() || site.isBlank()) {
-            return ResponseEntity.badRequest().body(new ErrorResponse("Не указан сайт для поиска"));
+            List<Site> sites = sitesList.getSites();
+            return searchService.searchAllSite(query, sites, offset, limit);
         }
         return searchService.search(query, site, offset, limit);
     }
