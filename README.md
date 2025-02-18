@@ -22,15 +22,46 @@ Java Core, Spring Boot, Hibernate, Apache Maven, Apache Lucene, Lombok, Jsoup
 
 <u><strong>Начало работы:</strong></u>
 
-Установите на свой компьютер MySQL-сервер, если он ещё не установлен, и создайте в нём пустую базу данных search_engine.
+1. Установите на свой компьютер MySQL-сервер, если он ещё не установлен, и создайте в нём пустую базу данных search_engine.
 В application.yaml укажите следующий путь к базе данных:
 <u>url: jdbc:mysql://localhost:3306/search_engine?useSSL=false&requireSSL=false&allowPublicKeyRetrieval=true</u>
 
-Если у вас нет возможности установить MySQL-сервер, то вы можете запустить Базу данных в контейнере Docker.
+2. Если у вас нет возможности установить MySQL-сервер, то вы можете запустить Базу данных в контейнере Docker.
 Для этого сделаете следующее:
-1. Установите и запустите Docker на вашем устройстве;
-2. Запустите контейнер Docker, выполнив в терминале команду <u>docker-compose up</u>;
-3. Укажите путь к базе данных: <u>jdbc:mysql://localhost:3307/search_engine_cont?useSSL=false&requireSSL=false&allowPublicKeyRetrieval=true</u>
+- Установите и запустите Docker на вашем устройстве; 
+- Запустите контейнер Docker, выполнив в терминале команду <u>docker-compose up</u>;
+- Укажите путь к базе данных: <u>jdbc:mysql://localhost:3307/search_engine_cont?useSSL=false&requireSSL=false&allowPublicKeyRetrieval=true</u>
+
+3. Подключите к проекту библиотеку LuceneMorphology. Для этого в директории Maven нужно создать settings.xml c указанием уникального токена доступа.
+
+```
+   <settings xmlns="http://maven.apache.org/SETTINGS/1.0.0"
+   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/SETTINGS/1.0.0
+   https://maven.apache.org/xsd/settings-1.0.0.xsd">
+
+    <servers>
+        <server>
+            <id>skillbox-gitlab</id>
+            <configuration>
+                <httpHeaders>
+                    <property>
+                        <name>Private-Token</name>
+                        <value>wglpat-Viu1C6oUSddYB3JdKviW
+                        </value>
+                    </property>
+                </httpHeaders>
+            </configuration>
+        </server>
+    </servers>
+</settings>
+```
+- В Windows он располагается в директории
+C:/Users/<Имя вашего пользователя>/.m2
+- В Linux — в директории
+/home/<Имя вашего пользователя>/.m2
+- В macOs — по адресу
+/Users/<Имя вашего пользователя>/.m2
+
 
 <u><strong>Как работает поисковый движок:</strong></u>
 
