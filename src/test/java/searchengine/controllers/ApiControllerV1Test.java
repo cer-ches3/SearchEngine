@@ -32,7 +32,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
-public class ApiControllerTest {
+public class ApiControllerV1Test {
 
     @Mock
     StatisticsService statisticsService;
@@ -50,7 +50,7 @@ public class ApiControllerTest {
     SitesList sitesList;
 
     @InjectMocks
-    ApiController apiController;
+    ApiControllerV1 apiController;
 
     MockMvc mockMvc;
     private AtomicBoolean indexingEnabled;
@@ -61,7 +61,7 @@ public class ApiControllerTest {
         mockMvc = MockMvcBuilders.standaloneSetup(apiController).build();
         indexingEnabled = new AtomicBoolean(false);
         try {
-            java.lang.reflect.Field field = ApiController.class.getDeclaredField("indexingEnabled");
+            java.lang.reflect.Field field = ApiControllerV1.class.getDeclaredField("indexingEnabled");
             field.setAccessible(true);
             field.set(apiController, indexingEnabled);
         } catch (NoSuchFieldException | IllegalAccessException e) {

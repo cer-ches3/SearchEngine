@@ -29,7 +29,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/api")
-public class ApiController {
+public class ApiControllerV1 {
     private final StatisticsService statisticsService;
     private final IndexingService indexingService;
     private final SearchService searchService;
@@ -46,7 +46,7 @@ public class ApiController {
         try {
             return ResponseEntity.ok(statisticsService.getStatistics());
         } catch (MalformedURLException e) {
-            throw new RuntimeException(e);
+            return ResponseEntity.badRequest().build();
         }
     }
 
