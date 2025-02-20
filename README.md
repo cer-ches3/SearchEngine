@@ -24,13 +24,13 @@ Java Core, Spring Boot, Hibernate, Apache Maven, Apache Lucene, Lombok, Jsoup
 
 1. Установите на свой компьютер MySQL-сервер, если он ещё не установлен, и создайте в нём пустую базу данных search_engine.
 В application.yaml укажите следующий путь к базе данных:
-<u>url: jdbc:mysql://localhost:3306/search_engine?useSSL=false&requireSSL=false&allowPublicKeyRetrieval=true</u>
+<u>jdbc:mysql://localhost:3306/search_engine?useSSL=false&requireSSL=false&allowPublicKeyRetrieval=true</u>
 
 2. Если у вас нет возможности установить MySQL-сервер, то вы можете запустить Базу данных в контейнере Docker.
 Для этого сделаете следующее:
 - Установите и запустите Docker на вашем устройстве; 
 - Запустите контейнер Docker, выполнив в терминале команду <u>docker-compose up</u>;
-- Укажите путь к базе данных: <u>jdbc:mysql://localhost:3307/search_engine_cont?useSSL=false&requireSSL=false&allowPublicKeyRetrieval=true</u>
+- В application.yaml укажите следующий путь к базе данных: <u>jdbc:mysql://localhost:3307/search_engine_cont?useSSL=false&requireSSL=false&allowPublicKeyRetrieval=true</u>
 
 3. Подключите к проекту библиотеку LuceneMorphology. Для этого в директории Maven нужно создать settings.xml c указанием уникального токена доступа.
 
@@ -89,6 +89,6 @@ C:/Users/<Имя вашего пользователя>/.m2
 
 6. На вкладке SEARCH реализована функция поиска страниц по ключевым словам. 
    Что бы воспользоваться поиском достаточно выбрать сайт, то которому будет осуществлён поиск и написать запрос в поле "Query".
-   В результате будет выдан список страниц, подходящих под заданный запрос.
+   В результате будет выдан список страниц, подходящих под заданный запрос. В случае, если сайт не будет выбран, поиск будет осуществлён по всем сайтам.
 
 ![vid3.gif](src/main/resources/other/vid3.gif)
