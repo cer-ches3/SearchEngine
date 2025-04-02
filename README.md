@@ -29,7 +29,11 @@ Java Core, Spring Boot, Hibernate, Apache Maven, Apache Lucene, Lombok, Jsoup
 2. Если у вас нет возможности установить MySQL-сервер, то вы можете запустить Базу данных в контейнере Docker.
 Для этого сделаете следующее:
 - Установите и запустите Docker на вашем устройстве; 
-- Запустите контейнер Docker, выполнив в терминале команду <u>docker-compose up</u>;
+- Запустите контейнер Docker, выполнив в терминале команды:
+```
+cd docker
+docker compose up
+```
 - В application.yaml укажите следующий путь к базе данных: <u>jdbc:mysql://localhost:3307/search_engine_cont?useSSL=false&requireSSL=false&allowPublicKeyRetrieval=true</u>
 
 3. Подключите к проекту библиотеку LuceneMorphology. Для этого в директории Maven нужно создать settings.xml c указанием уникального токена доступа.

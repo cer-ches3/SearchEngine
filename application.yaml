@@ -3,7 +3,7 @@ server:
 
 spring:
   datasource:
-    username: root
+    username: sergey
     password: cthsq30896
     url: jdbc:mysql://localhost:3306/search_engine?useSSL=false&requireSSL=false&allowPublicKeyRetrieval=true
 #    url: jdbc:mysql://localhost:3307/search_engine_cont?useSSL=false&requireSSL=false&allowPublicKeyRetrieval=true

@@ -1,0 +1,10 @@
+version: "3.8"
+
+services:
+  mysql-db:
+    image: mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: cthsq30896
+      MYSQL_DATABASE: search_engine_cont
+    ports:
+      - "3307:3306"
